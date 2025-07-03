@@ -1,5 +1,9 @@
 import pandas as pd
 import re
+from langdetect import detect, DetectorFactory
+
+# Ensure langdetect produces consistent results
+DetectorFactory.seed = 0
 
 # 1. Đọc dữ liệu
 df = pd.read_csv("reddit_posts.csv", encoding="utf-8")
@@ -11,6 +15,8 @@ df = df.drop_duplicates(subset="id")
 def clean_text(text: str) -> str:
     # 3.1 chuyển về string (phòng None)
     text = str(text)
+    # 3.1 remove URLs (http://, https://, www.)
+    text = re.sub(r'http[s]?://\S+|www\.\S+', ' ', text)
     # 3.2 xóa ký tự đặc biệt, chỉ giữ chữ, số và khoảng trắng
     text = re.sub(r'[^A-Za-z0-9\s]', ' ', text)
     # 3.3 collapse nhiều whitespace/newline thành 1 space

@@ -2,10 +2,14 @@ import praw, json, time
 reddit = praw.Reddit(client_id='24eDEbh2CZXjgBhuCJTg8Q', client_secret='LFaqdDfr-djUtlXckTQq2o-bSI3znA', user_agent='topic-modeler')
 from kafka import KafkaProducer
 from json import dumps
+from langdetect import detect, DetectorFactory
 
 BOOTSTRAP_SERVERS = ['localhost:9092']
 TOPIC             = 'reddit_posts'
 MAX_RESULTS       = 100
+
+# Ensure langdetect produces consistent results
+DetectorFactory.seed = 0
 
 # Tạo Kafka producer
 producer = KafkaProducer(
@@ -14,8 +18,20 @@ producer = KafkaProducer(
     retries=5,
     value_serializer=lambda v: dumps(v).encode('utf-8')
 )
+subreddits = ["anime", "gaming", "AskReddit", "teenagers", "sports", "worldnews", "Music", "books", "VietNamNation"]
+subreddit_str = "+".join(subreddits)
 
-for submission in reddit.subreddit('all').stream.submissions(skip_existing=True):
+for submission in reddit.subreddit(subreddit_str).stream.submissions(skip_existing=True):
+    # Ghép title + body để detect
+    text = f"{submission.title} {submission.selftext or ''}".strip()
+    
+    # Nếu không detect được hoặc không phải en thì bỏ qua
+    try:
+        if detect(text) != 'en':
+            continue
+    except Exception:
+        continue
+    
     data = {
         'id': submission.id,
         'title': submission.title,
