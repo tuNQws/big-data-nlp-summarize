@@ -1,2 +1,4 @@
 src/modeling/bertopic
 src/modeling/bertopic_*
+*.pkl
+src/output/checkpoints/*
